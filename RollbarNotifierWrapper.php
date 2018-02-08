@@ -5,7 +5,7 @@ namespace Utils;
  * Singleton-style wrapper around Rollbar and RollbarNotifier
  *
  * Motivation to write this code was the necesity to stop posting the Auth header to Rollbar.
- * You can use headers_to_remove array to set up all the headers you dont need to send to rollbar.
+ * You can use headers_to_remove array to set up all the headers you don't need to send to rollbar.
  */
 
 

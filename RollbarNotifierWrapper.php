@@ -5,13 +5,13 @@ namespace Utils;
  * Singleton-style wrapper around Rollbar and RollbarNotifier
  *
  * Motivation to write this code was the necesity to stop posting the Auth header to Rollbar.
- *
+ * You can use headers_to_remove array to set up all the headers you dont need to send to rollbar.
  */
 
 
 class RollbarWrapper extends \Rollbar
 {
-    public static function init($config = array(), $set_exception_handler = true, $set_error_handler = true, $report_fatal_errors = true) {
+    public static function init($config = array(), $headers_to_remove = array(), $set_exception_handler = true, $set_error_handler = true, $report_fatal_errors = true) {
         // Heroku support
         // Use env vars for configuration, if set
         if (isset($_ENV['ROLLBAR_ACCESS_TOKEN']) && !isset($config['access_token'])) {
@@ -26,6 +26,7 @@ class RollbarWrapper extends \Rollbar
         
         //Here we are creating our custom RollbarNotifier instance.
         self::$instance = new RollbarNotifierWrapper($config);
+        self::$instance->set_headers_to_remove($headers_to_remove);
     
         if ($set_exception_handler) {
             set_exception_handler('Rollbar::report_exception');
@@ -45,6 +46,12 @@ class RollbarWrapper extends \Rollbar
 
 class RollbarNotifierWrapper extends \RollbarNotifier
 {            
+    protected $headers_to_remove = array();
+    
+    public function set_headers_to_remove($headers_to_remove){
+        $this->headers_to_remove = $headers_to_remove;
+    }
+    
     protected function headers() {
         $headers = array();
         foreach ($this->scrub_request_params($_SERVER) as $key => $val) {
@@ -56,12 +63,13 @@ class RollbarNotifierWrapper extends \RollbarNotifier
                 } else {
                     $name = ucfirst($name);
                 }
-                //This line prevent posting Auth header to Rollbar.
-                if($name == 'Auth'){
+
+                if( array_search($name, $this->headers_to_remove) === false){
+                    $headers[$name] = $val;                    
+                } else {
                     $headers[$name] = '*******************************';
                     continue;
-                }
-                $headers[$name] = $val;                                
+                }                
             }
         }
     
